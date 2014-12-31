@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+body {
+  font: 10px sans-serif;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.bar {
+  fill: #7D26CD;
+}
+
+.bar:hover {
+  fill: #EED2EE;
+}
+
+.x.axis path {
+  display: none;
+}
+
+.d3-tip {
+  line-height: 1;
+  font-weight: bold;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  border-radius: 2px;
+}
+
+/* Creates a small triangle extender for the tooltip */
+.d3-tip:after {
+  box-sizing: border-box;
+  display: inline;
+  font-size: 10px;
+  width: 100%;
+  line-height: 1;
+  color: #EED2EE;
+  content: "\25BC";
+  position: absolute;
+  text-align: center;
+}
+
+/* Style northward tooltips differently */
+.d3-tip.n:after {
+  margin: -1px 0 0 0;
+  top: 100%;
+  left: 0;
+}
+
+</style>
+<svg class="chart"></svg>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js"></script>
+<script>
+
+// define without margins
+// var width = 960,
+//     height = 500;
+
+// with margins
+var margin = {top: 20, right: 30, bottom: 100, left: 40},
+    width = 800 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+
+// ordinal scale for qualitative values
+var x = d3.scale.ordinal()
+    .rangeRoundBands([0, width], .1);
+
+// linear scale for number
+var y = d3.scale.linear()
+    .range([height, 0]);
+
+// define Axis
+var xAxis = d3.svg.axis()
+  .scale(x)
+  .orient("bottom");
+
+var yAxis = d3.svg.axis()
+  .scale(y)
+  .orient("left")
+
+//add the tip
+var tip = d3.tip()
+  .attr('class', 'd3-tip')
+  .offset([-10, 0])
+  .html(function(d) {
+    return "<strong>Book Title:</strong> <span style='color:#EED2EE'>" + d.Title + "</span>" + "<br></strong>Days Read:</strong> <span style='color:#EED2EE'>" + d.days + " days</span>";
+  })
+
+// define chart
+var chart = d3.select(".chart")
+    // get the margins in
+    .attr("width", width  + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+// call tip function
+chart.call(tip);
+
+// pass the data
+d3.csv("goodreads_export_2014.csv", type, function(error, data) {
+  // add text
+  x.domain(data.map(function(d) {return d.Title;}))
+  // add numbers
+  y.domain([0, d3.max(data, function(d) { return d.days; })]);
+
+  // var barWidth = width / data.length;
+
+  chart.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis);
+
+  chart.append("g")
+      .attr("class", "y axis")
+      .call(yAxis);
+
+  chart.selectAll(".bar")
+      .data(data)
+    .enter().append("rect")
+      .attr("class", "bar")
+      .attr("x", function(d) { return x(d.Title); })
+      .attr("y", function(d) { return y(d.days); })
+      .attr("width", x.rangeBand())
+      .attr("height", function(d) { return height - y(d.days); })
+      .on('mouseover', tip.show)
+      .on('mouseout', tip.hide);
+
+    chart.selectAll("text")
+      .style("text-anchor", "end")
+      .attr("dx", "-.8em")
+      .attr("dy", ".15em")
+      .attr("transform", function(d) { return "rotate(-45)"});
+
+
+
+// old code
+  // var bar = chart.selectAll("g")
+  //     .data(data)
+  //   .enter().append("g")
+  //     // .attr("transform", function(d, i) { return "translate(" + i * barWidth + ",0)"; });
+  //     // now the width of rectangle is defined by the text length
+  //     .attr("transform", function(d) { return "translate(" + x(d.Title) + ",0)"; });
+
+  // bar.append("rect")
+  //     .attr("y", function(d) { return y(d.days); })
+  //     .attr("height", function(d) { return height - y(d.days); })
+  //     // .attr("width", barWidth - 1);
+  //     .attr("width", x.rangeBand());
+
+  // bar.append("text")
+  //     // .attr("x", barWidth / 2)
+  //     .attr("x", x.rangeBand()/ 2)
+  //     .attr("y", function(d) { return y(d.days) -10; })
+  //     .attr("dy", ".75em")
+  //     .text(function(d) { return d.Title; });
+});
+
+function type(d) {
+  d.days = +d.days; // coerce to number
+  return d;
+}
+
+</script>
